@@ -1,5 +1,5 @@
 import os
-from app.schemas.auth_schema import UserSchema
+from app.schemas.auth_schema import UserSchema, UserResponse
 from dotenv import load_dotenv
 from fastapi import HTTPException, Header, status, Depends
 from sqlalchemy import select
@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db import  get_db
 from fastapi import HTTPException, status, Depends, Request
 
-from app.config import redis
+from app.config import REDIS_CLIENT as redis 
 
 load_dotenv()
 
@@ -44,7 +44,7 @@ async def get_current_user(
     cached_user = await redis.get(cache_key)
     if cached_user:
         user_data = json.loads(cached_user)
-        return UserSchema(**user_data) 
+        return UserResponse(**user_data) 
 
 
     try:
@@ -76,7 +76,7 @@ async def get_current_user(
         )
 
     # Convert user to UserSchema
-    user_schema = UserSchema.from_orm(user)
+    user_schema = UserResponse.from_orm(user)
     await redis.set(cache_key, user_schema.json())
 
     return user

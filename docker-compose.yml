@@ -1,21 +1,75 @@
-version: "3.3"
+version: "3.8"
 
 services:
-  redis:
-    image: redis:7
-  fastapi_app:
-    build: .
-    container_name: orders_microservice-fastapi_app
+  postgres:
+    image: postgres:15
     env_file:
       - .env
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "5438:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+    ports:
+      - "6378:6379"
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      - "5672:5672"
+      - "15672:15672" # management UI
+
+  fastapi_app:
+    build: .
+    container_name: order_service
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+      - redis
+      - rabbitmq
     ports:
       - "8001:8001"
     volumes:
       - .:/app
-    depends_on:
-      - redis
     command: >
       bash -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload"
+
+  celery_worker:
+    build: .
+    container_name: celery_worker
+    env_file:
+      - .env
+    depends_on:
+      - redis
+      - rabbitmq
+    volumes:
+      - .:/app
+    command: >
+      bash -c "celery -A app.queue.consumer.celery_app worker --loglevel=INFO"
+
+  queue_consumer:
+    build: .
+    container_name: queue_consumer
+    env_file:
+      - .env
+    depends_on:
+      - rabbitmq
+      - redis
+    volumes:
+      - .:/app
+    restart: on-failure
+    command: >
+      bash -c "python -m app.queue.consumer"
 
 volumes:
   postgres_data:

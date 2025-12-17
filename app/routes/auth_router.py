@@ -4,14 +4,15 @@ from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy import select
 from app.auth.tokens import create_access_token, verify_access_token
 from app.models.user import User
-from fastapi import HTTPException, Depends
+from fastapi import HTTPException, Depends, status
 from app.db import get_db
 from sqlalchemy.orm import Session
 from sqlalchemy.ext.asyncio import AsyncSession
-
 from app.auth.get_user import get_current_user
 from app.schemas.auth_schema import Token,  UserResponse, UserAuth
-from app.crud.user_crud import personal_get_user_data
+from app.crud.user_crud import personal_get_user_data, create_user
+from app.schemas.auth_schema import UserRegister
+
 
 auth_router = APIRouter()
 
@@ -54,3 +55,14 @@ def refresh_token(token: str = Depends(oauth2_scheme)):
 async def get_user_data(db: AsyncSession = Depends(get_db), user=Depends(get_current_user)):
     user_data = await personal_get_user_data(db, user.id)
     return user_data
+
+
+
+
+@auth_router.post("/register", response_model=UserResponse)
+async def register_user(payload: UserRegister, db: AsyncSession = Depends(get_db)):
+    try:
+        user = await create_user(db, payload.username, payload.email, payload.password)
+        return user
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
