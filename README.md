@@ -15,9 +15,9 @@
 ### 1. Клонировать репозиторий 
 ```bash 
 
-git clone https://github.com/<your-username>/<repo-name>.git 
+git clone git@github.com:ibroxim91/order_microservice.git
 
-cd <repo-name>
+cd order_microservice
 ```
 
 ### 2.Запустить инфраструктуру через Docker Compose
