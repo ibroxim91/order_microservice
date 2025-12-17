@@ -2,13 +2,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from fastapi import HTTPException, status
 from sqlalchemy.orm import selectinload
-from app.models.user import User  # Import the User model
-from app.schemas.auth_schema import UserResponse # Import the UserResponse schema
+from app.models.user import User  
+from app.schemas.auth_schema import UserResponse 
 from sqlalchemy import select
 
 
 async def create_user(db: AsyncSession, username: str, email: str, password: str) -> User:
-    # Tekshirish: username yoki email band emasligini aniqlash
+    # Chech: username or email already exists
     res = await db.execute(select(User).where(User.username == username))
     if res.scalar_one_or_none():
         raise ValueError("Username already exists")

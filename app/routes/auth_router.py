@@ -27,6 +27,9 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="access")
 # Маршрут для получения токена доступа
 @auth_router.post("/access", response_model=Token)
 async def login_for_access_token(user: UserAuth, db: Session = Depends(get_db)):
+    """
+    Login for access token.
+    """
     user_db = await db.execute(select(User).where(User.username == user.username))
     user_db = user_db.scalar_one_or_none()
     if not user_db:
@@ -42,6 +45,9 @@ async def login_for_access_token(user: UserAuth, db: Session = Depends(get_db)):
 # # Маршрут для обновления токена
 @auth_router.post("/refresh", response_model=Token)
 def refresh_token(token: str = Depends(oauth2_scheme)):
+    """
+    Refresh access token.
+    """
     try:
         payload = verify_access_token(token)
         pin_code = payload.get("sub")
@@ -53,6 +59,9 @@ def refresh_token(token: str = Depends(oauth2_scheme)):
 
 @auth_router.get("/me", response_model=UserResponse)
 async def get_user_data(db: AsyncSession = Depends(get_db), user=Depends(get_current_user)):
+    """
+    Get user data.
+    """
     user_data = await personal_get_user_data(db, user.id)
     return user_data
 
@@ -61,6 +70,9 @@ async def get_user_data(db: AsyncSession = Depends(get_db), user=Depends(get_cur
 
 @auth_router.post("/register", response_model=UserResponse)
 async def register_user(payload: UserRegister, db: AsyncSession = Depends(get_db)):
+    """
+    Register a new user.
+    """
     try:
         user = await create_user(db, payload.username, payload.email, payload.password)
         return user

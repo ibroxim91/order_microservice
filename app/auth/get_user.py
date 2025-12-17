@@ -29,7 +29,7 @@ async def get_current_user(
     only_token: bool = False
 ):
 
-    # Token tekshiruvi
+    # Token check
     if authorization is None or not authorization.startswith("Bearer "):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

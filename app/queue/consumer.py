@@ -26,7 +26,7 @@ def process_order_task(order_id: str):
 
 
 async def consume():
-    # Retry logic: RabbitMQ tayyor bo‘lmaguncha kutadi
+    # Retry logic: Waiting for RabbitMQ to be ready
     for attempt in range(10):
         try:
             connection = await aio_pika.connect_robust(RABBITMQ_URL)
@@ -51,7 +51,7 @@ async def consume():
                     order_id = data.get("order_id")
                     print(f"📦 New order received: {order_id}")
                     celery_app.send_task("orders.process_order_task", args=[order_id])
-                    # yoki: process_order_task.delay(order_id)
+                    # or: process_order_task.delay(order_id)
 
 
 if __name__ == "__main__":

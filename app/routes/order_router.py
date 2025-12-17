@@ -25,6 +25,9 @@ order_router = APIRouter()
 @order_router.post("/", response_model=OrderOut)
 @limiter.limit(POST_LIMIT)
 async def create_order( request: Request, payload: OrderCreate, db: AsyncSession = Depends(get_db), user: int = Depends(get_current_user)):
+    """
+    Create a new order.
+    """
     order = await OrderCRUD.create(db, user_id=user.id, items=payload.items, total_price=payload.total_price)
     await publish_new_order(str(order.id), order.user_id)
     return order
@@ -33,12 +36,14 @@ async def create_order( request: Request, payload: OrderCreate, db: AsyncSession
 @order_router.get("/{order_id}/", response_model=OrderOut)
 @limiter.limit(GET_LIMIT)
 async def get_order(request: Request, order_id: UUID, db: AsyncSession = Depends(get_db), user=Depends(get_current_user)):
-    # Avval cache’dan tekshir
+    """
+    Get an order by ID.
+    """
     cached = await get_order_from_cache(str(order_id))
     if cached :
         return cached
 
-    # Agar cache’da yo‘q bo‘lsa → DB’dan olib cache’ga yoz
+    # If not in cache → DB from
     order = await OrderCRUD.get(db, order_id)
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
@@ -53,6 +58,9 @@ async def get_order(request: Request, order_id: UUID, db: AsyncSession = Depends
 @order_router.patch("/{order_id}/", response_model=OrderOut)
 @limiter.limit(PATCH_LIMIT)
 async def update_order_status( request: Request,order_id: UUID, payload: OrderUpdateStatus, db: AsyncSession = Depends(get_db), user: int = Depends(get_current_user)):
+    """
+    Update the status of an order.
+    """
     order = await OrderCRUD.update_status(db, order_id, payload.status)
     if not order:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Order not found")
@@ -65,5 +73,8 @@ async def update_order_status( request: Request,order_id: UUID, payload: OrderUp
 @order_router.get("/user/{user_id}/", response_model=List[OrderOut])
 @limiter.limit(GET_LIMIT)
 async def get_user_orders(request: Request, user_id: int, db: AsyncSession = Depends(get_db), user: int = Depends(get_current_user)):
+    """
+    Get all orders for a specific user.
+    """
     orders = await OrderCRUD.list_by_user(db, user_id)
     return orders
